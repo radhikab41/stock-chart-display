@@ -1,0 +1,122 @@
+<html>
+    <head>
+        <script src="https://www.chartjs.org/dist/2.7.3/Chart.bundle.js"></script>
+        <script src="https://www.chartjs.org/samples/latest/utils.js"></script>
+        <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet">
+        <style>
+            canvas {
+            -moz-user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            }
+            body{
+            font-family: 'Raleway', sans-serif;
+            }
+        </style>
+        <script>
+            var json = {};
+            var globalStockNames = [];
+            var globalStockprice = [];
+            function getStockData(){
+                var stock = document.getElementById("stockInput");
+                const Http = new XMLHttpRequest();
+                var xhttp = new XMLHttpRequest();
+                var code = document.getElementById("stockInput").value;
+                var url = "https://cloud.iexapis.com/beta/stock/"+code+"/quote?token=pk_d1c7ba516f7844ccb8b9b5566047dd99";
+                var globalValue;
+                var arr = [];
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                        var stockdata = [];
+                        json[code] =stockdata;             
+                        var value = JSON.parse(this.responseText);
+                        console.log(value);
+                        globalValue = value;
+                        stockdata.push(value);
+                        arr = stockdata;
+                        var newStock = stockdata;
+                        globalStockNames.push(newStock[0].symbol);
+                        globalStockprice.push(newStock[0].iexRealtimePrice);
+                        if(newStock[0].open == null){
+                            document.getElementById("closed").innerHTML = "NOTE : The Market is closed today, due to which you cannot see the real time stock prices charts"
+                        }
+                        console.log(globalStockprice);
+                        var node = document.createElement("LI");
+                        var textnode = document.createTextNode(newStock[0].symbol);
+                        node.appendChild(textnode);
+                        document.getElementById("list").appendChild(node); 
+                        newChart();
+                    }
+                };
+                xhttp.open("GET", url, true);
+                xhttp.send();
+            }
+        </script>
+    </head>
+    <body>
+        <input id="stockInput"/>
+        <button onclick="getStockData()">Add</button>
+        <ul id="list">
+        </ul>
+        <span id="closed"></span>
+
+        <div class="chart">
+            <div id="container" style="width: 75%;">
+                <canvas id="canvas"></canvas>
+            </div>
+        </div>
+        <script>
+            function checkTime() {
+                var d = new Date(); // current time
+                var hours = d.getHours();
+                var mins = d.getMinutes();
+                var day = d.getDay();
+                return day >= 1&& day <= 5 && hours >= 9 && (hours < 17 || hours === 17 && mins <= 30);
+            }
+            function newChart(){
+                if(checkTime()){
+                    setTimeout(newChart, 5000);
+                }
+               
+                if(window.myHorizontalBar){
+                    window.myHorizontalBar.destroy();
+                }
+                var MONTHS = globalStockNames;
+                var color = Chart.helpers.color;
+                var horizontalBarChartData = {
+                    labels: globalStockNames,
+                    datasets: [{
+                        label: 'Dataset 1',
+                        backgroundColor: color(window.chartColors.blue).alpha(0.5).rgbString(),
+                        borderColor: window.chartColors.blue,
+                        borderWidth: 1,
+                        data: globalStockprice
+                    }]
+                };
+                var ctx = document.getElementById('canvas').getContext('2d');
+                window.myHorizontalBar = new Chart(ctx, {
+                    type: 'horizontalBar',
+                    data: horizontalBarChartData,
+                    options: {
+                        elements: {
+                            rectangle: {
+                                borderWidth: 2,
+                            }
+                        },
+                        responsive: true,
+                        legend: {
+                            position: 'left',
+                            display:false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Stock Prices'
+                        }
+                    }
+                });
+                var colorNames = Object.keys(window.chartColors);
+            }
+        </script>
+        </div>
+    </body>
+</html>
